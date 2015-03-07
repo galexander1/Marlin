@@ -1546,7 +1546,7 @@ inline void gcode_G28() {
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
 
     for (int i = X_AXIS; i <= Z_AXIS; i++) destination[i] = 3 * Z_MAX_LENGTH;
-    feedrate = 1.732 * homing_feedrate[X_AXIS];
+    feedrate = homing_feedrate[X_AXIS];
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
     st_synchronize();
     endstops_hit_on_purpose();
