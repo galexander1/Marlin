@@ -455,7 +455,7 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 //===========================================================================
 
 #if defined (ENABLE_AUTO_BED_LEVELING) && defined (DELTA)
-  #error "Bed Auto Leveling is still not compatible with Delta Kinematics."
+//  #error "Bed Auto Leveling is still not compatible with Delta Kinematics."
 #endif  
 
 #if EXTRUDERS > 1 && defined TEMP_SENSOR_1_AS_REDUNDANT

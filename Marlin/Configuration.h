@@ -416,7 +416,6 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 
 
 
-#if 0 /* XXX - re-enable this after we implement the bed leveling hack */
 #define ENABLE_AUTO_BED_LEVELING // Delete the comment to enable (remove // at the start of the line)
 #define NONLINEAR_BED_LEVELING  // simple linear interpolation across grid
 #define ACCURATE_BED_LEVELING_GRID_X ((RIGHT_PROBE_BED_POSITION - LEFT_PROBE_BED_POSITION) / (AUTO_BED_LEVELING_GRID_POINTS-1))
@@ -427,7 +426,10 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 #define BACK_PROBE_BED_POSITION DELTA_PRINTABLE_RADIUS
 #define FRONT_PROBE_BED_POSITION -DELTA_PRINTABLE_RADIUS
 #define AUTO_BED_LEVELING_GRID_POINTS 7
-#endif /* 0 */
+#define X_PROBE_OFFSET_FROM_EXTRUDER 0.
+#define Y_PROBE_OFFSET_FROM_EXTRUDER 0.
+#define Z_PROBE_OFFSET_FROM_EXTRUDER -8.0
+#define XY_TRAVEL_SPEED 8000         // X and Y axis travel speed between probes, in mm/min
 
 
 // The position of the homing switches

@@ -29,7 +29,7 @@
 
 #include "Marlin.h"
 
-#ifdef ENABLE_AUTO_BED_LEVELING
+#if 0 && defined(ENABLE_AUTO_BED_LEVELING)
   #if Z_MIN_PIN == -1
     #error "You must have a Z_MIN endstop to enable Auto Bed Leveling feature. Z_MIN_PIN must point to a valid hardware pin."
   #endif
@@ -166,6 +166,7 @@
 // M400 - Finish all moves
 // M401 - Lower z-probe if present
 // M402 - Raise z-probe if present
+// M403 - Provide bed_level matrix value
 // M404 - N<dia in mm> Enter the nominal filament width (3mm, 1.75mm ) or will display nominal filament width without parameters
 // M405 - Turn on Filament Sensor extrusion control.  Optional D<delay in cm> to set delay in centimeters between sensor and extruder 
 // M406 - Turn off Filament Sensor extrusion control 
@@ -1184,6 +1185,7 @@ static void clean_up_after_endstop_move() {
 }
 
 static void engage_z_probe() {
+return;
   // Engage Z Servo endstop if enabled
   #ifdef SERVO_ENDSTOPS
     if (servo_endstops[Z_AXIS] > -1) {
@@ -1200,6 +1202,7 @@ static void engage_z_probe() {
 }
 
 static void retract_z_probe() {
+return;
   // Retract Z Servo endstop if enabled
   #ifdef SERVO_ENDSTOPS
     if (servo_endstops[Z_AXIS] > -1) {
@@ -1518,6 +1521,104 @@ inline void gcode_G4() {
 
 #endif //FWRETRACT
 
+#ifdef NONLINEAR_BED_LEVELING
+static float bed_level[AUTO_BED_LEVELING_GRID_POINTS][AUTO_BED_LEVELING_GRID_POINTS];
+
+static void
+init_bed_level()
+{
+	bed_level[0][0]=0.00;
+	bed_level[1][0]=0.00;
+	bed_level[2][0]=0.00;
+	bed_level[3][0]=0.00;
+	bed_level[4][0]=0.00;
+	bed_level[5][0]=0.00;
+	bed_level[6][0]=0.00;
+	bed_level[0][1]=0.00;
+	bed_level[1][1]=0.00;
+	bed_level[2][1]=0.00;
+	bed_level[3][1]=0.00;
+	bed_level[4][1]=0.00;
+	bed_level[5][1]=0.00;
+	bed_level[6][1]=0.00;
+	bed_level[0][2]=0.00;
+	bed_level[1][2]=0.00;
+	bed_level[2][2]=0.00;
+	bed_level[3][2]=0.00;
+	bed_level[4][2]=0.00;
+	bed_level[5][2]=0.00;
+	bed_level[6][2]=0.00;
+	bed_level[0][3]=0.00;
+	bed_level[1][3]=0.00;
+	bed_level[2][3]=0.00;
+	bed_level[3][3]=0.00;
+	bed_level[4][3]=0.00;
+	bed_level[5][3]=0.00;
+	bed_level[6][3]=0.00;
+	bed_level[0][4]=0.00;
+	bed_level[1][4]=0.00;
+	bed_level[2][4]=0.00;
+	bed_level[3][4]=0.00;
+	bed_level[4][4]=0.00;
+	bed_level[5][4]=0.00;
+	bed_level[6][4]=0.00;
+	bed_level[0][5]=0.00;
+	bed_level[1][5]=0.00;
+	bed_level[2][5]=0.00;
+	bed_level[3][5]=0.00;
+	bed_level[4][5]=0.00;
+	bed_level[5][5]=0.00;
+	bed_level[6][5]=0.00;
+	bed_level[0][6]=0.00;
+	bed_level[1][6]=0.00;
+	bed_level[2][6]=0.00;
+	bed_level[3][6]=0.00;
+	bed_level[4][6]=0.00;
+	bed_level[5][6]=0.00;
+	bed_level[6][6]=0.00;
+}
+
+
+// Adjust print surface height by linear interpolation over the bed_level array.
+void adjust_delta(float cartesian[3])
+{
+  int half = (AUTO_BED_LEVELING_GRID_POINTS - 1) / 2;
+  float grid_x = max(0.001-half, min(half-0.001, cartesian[X_AXIS] / ACCURATE_BED_LEVELING_GRID_X));
+  float grid_y = max(0.001-half, min(half-0.001, cartesian[Y_AXIS] / ACCURATE_BED_LEVELING_GRID_Y));
+  int floor_x = floor(grid_x);
+  int floor_y = floor(grid_y);
+  float ratio_x = grid_x - floor_x;
+  float ratio_y = grid_y - floor_y;
+  float z1 = bed_level[floor_x+half][floor_y+half];
+  float z2 = bed_level[floor_x+half][floor_y+half+1];
+  float z3 = bed_level[floor_x+half+1][floor_y+half];
+  float z4 = bed_level[floor_x+half+1][floor_y+half+1];
+  float left = (1-ratio_y)*z1 + ratio_y*z2;
+  float right = (1-ratio_y)*z3 + ratio_y*z4;
+  float offset = (1-ratio_x)*left + ratio_x*right;
+
+  delta[X_AXIS] += offset;
+  delta[Y_AXIS] += offset;
+  delta[Z_AXIS] += offset;
+
+  /*
+  SERIAL_ECHOPGM("grid_x="); SERIAL_ECHO(grid_x);
+  SERIAL_ECHOPGM(" grid_y="); SERIAL_ECHO(grid_y);
+  SERIAL_ECHOPGM(" floor_x="); SERIAL_ECHO(floor_x);
+  SERIAL_ECHOPGM(" floor_y="); SERIAL_ECHO(floor_y);
+  SERIAL_ECHOPGM(" ratio_x="); SERIAL_ECHO(ratio_x);
+  SERIAL_ECHOPGM(" ratio_y="); SERIAL_ECHO(ratio_y);
+  SERIAL_ECHOPGM(" z1="); SERIAL_ECHO(z1);
+  SERIAL_ECHOPGM(" z2="); SERIAL_ECHO(z2);
+  SERIAL_ECHOPGM(" z3="); SERIAL_ECHO(z3);
+  SERIAL_ECHOPGM(" z4="); SERIAL_ECHO(z4);
+  SERIAL_ECHOPGM(" left="); SERIAL_ECHO(left);
+  SERIAL_ECHOPGM(" right="); SERIAL_ECHO(right);
+  SERIAL_ECHOPGM(" offset="); SERIAL_ECHOLN(offset);
+  */
+}
+#endif /* NONLINEAR_BED_LEVELING */
+
 /**
  * G28: Home all axes, one at a time
  */
@@ -1744,9 +1845,12 @@ inline void gcode_G28() {
   feedmultiply = saved_feedmultiply;
   previous_millis_cmd = millis();
   endstops_hit_on_purpose();
+#ifdef NONLINEAR_BED_LEVELING
+  init_bed_level();
+#endif /* NONLINEAR_BED_LEVELING */
 }
 
-#ifdef ENABLE_AUTO_BED_LEVELING
+#if 0 && defined(ENABLE_AUTO_BED_LEVELING)
 
   // Define the possible boundaries for probing based on set limits
   #define MIN_PROBE_X (max(X_MIN_POS, X_MIN_POS + X_PROBE_OFFSET_FROM_EXTRUDER))
@@ -4363,13 +4467,13 @@ void process_commands() {
     #ifdef ENABLE_AUTO_BED_LEVELING
 
       case 29: // G29 Detailed Z-Probe, probes the bed at 3 or more points.
-        gcode_G29();
+//        gcode_G29();
         break;
 
       #ifndef Z_PROBE_SLED
 
         case 30: // G30 Single Z Probe
-          gcode_G30();
+//          gcode_G30();
           break;
 
       #else // Z_PROBE_SLED
@@ -4711,6 +4815,22 @@ void process_commands() {
           break;
       #endif
 
+#ifdef NONLINEAR_BED_LEVELING
+    case 403: {
+	unsigned x,y;
+	double z;
+	if (!code_seen('X')) break;
+	x = code_value_long();
+	if (!code_seen('Y')) break;
+	y = code_value_long();
+	if (!code_seen('Z')) break;
+	z = code_value();
+	if ((x < AUTO_BED_LEVELING_GRID_POINTS) &&
+	    (y < AUTO_BED_LEVELING_GRID_POINTS)) {
+		bed_level[x][y] = z;
+	}
+    }   break;
+#endif /* NONLINEAR_BED_LEVELING */
       #ifdef FILAMENT_SENSOR
         case 404:  //M404 Enter the nominal filament width (3mm, 1.75mm ) N<3.0> or display nominal filament width
           gcode_M404();
@@ -4986,6 +5106,9 @@ for (int s = 1; s <= steps; s++) {
       destination[i] = current_position[i] + difference[i] * fraction;
     }
     calculate_delta(destination);
+#ifdef NONLINEAR_BED_LEVELING
+    adjust_delta(destination);
+#endif
     plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS],
                      destination[E_AXIS], feedrate*feedmultiply/60/100.0,
                      active_extruder);
